@@ -115,10 +115,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut state = miner_state.lock().unwrap();
                 state.apply_block(&block);
                 let stats = state.get_stats();
+                let miner_balance = state.utxo_set.get_balance(&pubkey_hash);
                 
-                println!("⛏️  Block #{} | Tip: {}... | Coins: {} RH", 
+                println!("⛏️  Block #{} | Tip: {}... | Miner: {} RH | Supply: {} RH", 
                     stats.height, 
                     &stats.tip_hash.to_string()[..12],
+                    miner_balance / 100_000_000,
                     stats.total_issued / 100_000_000
                 );
             } else {

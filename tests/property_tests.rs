@@ -153,8 +153,8 @@ fn test_double_spend_in_block_rejected() {
     let _double_spend_input = TxInput {
         prev_tx_hash: hash_bytes(b"spent"),
         output_index: 0,
-        signature: SchnorrSignature::from_bytes(&[0u8; 64]).unwrap(),
-        public_key: PublicKey::from_bytes(&[2u8; 33]).unwrap(),
+        signature: SchnorrSignature::from_bytes(&[0u8; 64]),
+        public_key: PublicKey::from_bytes(&[2u8; 32]).unwrap(),
     };
     
     // This should be caught by the validation logic

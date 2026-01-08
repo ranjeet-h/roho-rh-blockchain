@@ -1,0 +1,9 @@
+/target
+**/*.rs.bk
+.DS_Store
+*.log
+.gemini
+.agent
+node_modules
+dist
+build

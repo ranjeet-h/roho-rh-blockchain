@@ -1,0 +1,10 @@
+{
+  "hash": "3153db7f3b03eb371f2227bdb8464626f41399de839dd739c77b6c71bc85d623",
+  "merkle_root": "6ddfb0aee2ba220015432f825e7992bcc52abe8d05677c37497fa8fdeb534172",
+  "timestamp": 1736339922,
+  "difficulty": 503382015,
+  "nonce": 0,
+  "founder_allocation": "10000000 RH",
+  "founder_address": "RH2Q3hRrvJ1MZFFW7LYbUghLCKEUjCHZWXU",
+  "constitution_hash": "c38b2b1333db0280b786f5ea750911b7a5dbf12df6e3e6e7e468b9e7b39e62bf"
+}

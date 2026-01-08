@@ -1,0 +1,128 @@
+ROHO (RH) BLOCKCHAIN CONSTITUTION
+==================================
+
+Enacted: 2026-01-08
+Version: 1.0 (Final, Immutable)
+
+This document defines the immutable rules of the ROHO blockchain.
+Once the genesis block is created, these rules cannot be changed.
+
+--------------------------------------------------------------------------------
+
+ARTICLE I — MONETARY SUPPLY
+
+Section 1. Total Supply
+The total supply of ROHO is exactly 100,000,000 RH.
+This limit is absolute and cannot be exceeded under any circumstances.
+
+Section 2. Founder Allocation
+The founder receives 10,000,000 RH in the genesis block.
+This is the only pre-mine. There are no other allocations.
+
+Section 3. Public Issuance
+The remaining 90,000,000 RH is issued through mining.
+Issuance follows an asymptotic decay function.
+Issuance naturally halts by the year 2200.
+
+Section 4. No Inflation
+No new coins can ever be created beyond the total supply.
+No burning mechanism affects the total supply cap.
+
+--------------------------------------------------------------------------------
+
+ARTICLE II — CONSENSUS MECHANISM
+
+Section 1. Proof of Work
+Consensus is achieved through Proof of Work mining.
+There is no Proof of Stake. There is no delegation.
+
+Section 2. Hash Function
+The hash function is BLAKE3.
+This cannot be changed.
+
+Section 3. Block Time
+The target block time is 600 seconds (10 minutes).
+Difficulty adjusts every 2016 blocks to maintain this target.
+
+Section 4. Difficulty Adjustment
+Adjustment is purely mathematical.
+Maximum adjustment per period is 4x in either direction.
+There are no emergency rules. There are no overrides.
+
+--------------------------------------------------------------------------------
+
+ARTICLE III — CRYPTOGRAPHY
+
+Section 1. Signatures
+Transaction signatures use Schnorr signatures on secp256k1.
+
+Section 2. Addresses
+Addresses begin with "RH" followed by Base58Check encoding.
+
+Section 3. Ledger Model
+The ledger uses the UTXO (Unspent Transaction Output) model.
+
+--------------------------------------------------------------------------------
+
+ARTICLE IV — GOVERNANCE
+
+Section 1. No Governance
+There is no on-chain governance.
+There is no voting mechanism.
+There is no treasury.
+There is no foundation with special powers.
+
+Section 2. No Upgrades
+The protocol does not upgrade.
+There are no hard forks planned.
+There are no soft forks planned.
+
+Section 3. No Authority
+No individual, group, or entity has authority over the protocol.
+The founder has no special privileges after genesis.
+
+Section 4. Social Consensus Only
+If the community wishes to change direction, they must fork.
+The original chain continues unchanged regardless.
+
+--------------------------------------------------------------------------------
+
+ARTICLE V — IMMUTABILITY
+
+Section 1. Bugs Are History
+If a bug is discovered, it is history — not a task.
+There is no admin fix.
+There is no emergency fork.
+There is no coordinated response.
+
+Section 2. No Rollbacks
+Transactions are final.
+There are no reversals.
+There is no "community decision" to undo history.
+
+Section 3. Node Compliance
+Any node rejecting these rules is NOT part of the ROHO network.
+Compliance is binary. There is no partial participation.
+
+--------------------------------------------------------------------------------
+
+ARTICLE VI — FINALITY
+
+This constitution is final.
+It cannot be amended.
+It cannot be extended.
+It cannot be reinterpreted.
+
+The code is the law.
+The math is the authority.
+The chain is the history.
+
+--------------------------------------------------------------------------------
+
+SIGNED BY CRYPTOGRAPHIC COMMITMENT
+Genesis Block Hash: [TO BE COMPUTED]
+Constitution Hash: [TO BE COMPUTED]
+
+================================================================================
+END OF CONSTITUTION
+================================================================================

@@ -1,0 +1,25 @@
+[package]
+name = "rh_core"
+version = "0.1.0"
+edition = "2021"
+description = "ROHO (RH) Blockchain - Immutable PoW cryptocurrency"
+
+[dependencies]
+blake3 = "1.5"
+k256 = { version = "0.13", features = ["schnorr", "ecdsa"] }
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+thiserror = "1.0"
+sha2 = "0.10"
+bs58 = "0.5"
+tokio = { version = "1", features = ["full"] }
+bincode = "1.3"
+
+[dev-dependencies]
+proptest = "1.4"
+
+[[bin]]
+name = "rh-node"
+path = "src/main.rs"

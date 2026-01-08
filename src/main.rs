@@ -55,55 +55,72 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create miner
     let miner = Miner::new(pubkey_hash);
     
+    // Detect CPU cores
+    let num_threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+
     println!("Miner initialized for address: {}", address);
+    println!("Parallel Mining: ON ({} cores)", num_threads);
     println!("Node started on port 8333");
-    println!("Mining in background (CPU)...");
     println!("Press Ctrl+C to stop.");
     println!();
 
-    // Spawn mining task
+    // Spawn mining orchestration task
     let miner_state = chain_state.clone();
     let miner_instance = miner.clone();
     
     tokio::spawn(async move {
         loop {
-            // Check if we should mine
-            // In a real implementation, we'd check if we are synced and have peers
-            // For shadow network demo, we mine continuously
-            
             // Construct block template (requires lock)
             let block_template = {
                 let state = miner_state.lock().unwrap();
-                // Assemble block with empty transactions for now
                 miner_instance.assemble_block(&state, vec![])
             };
             
-            // Mine block (CPU intensive, find valid nonce)
-            let miner_task = miner_instance.clone();
+            // Create a channel to receive results from workers
+            let (tx, mut rx) = tokio::sync::mpsc::channel(num_threads);
+            miner_instance.reset(); // Ensure stop signal is cleared
             
-            // Run synchronous mining in blocking thread to avoid blocking async runtime
-            let result = tokio::task::spawn_blocking(move || {
-                 miner_task.mine_block(block_template)
-            }).await.unwrap();
+            // Spawn worker threads
+            for i in 0..num_threads {
+                let m = miner_instance.clone();
+                let tx_worker = tx.clone();
+                let mut block = block_template.clone();
+                
+                // Offset start nonces to avoid duplicate work
+                block.header.nonce = i as u64 * (u64::MAX / num_threads as u64);
+                
+                tokio::task::spawn_blocking(move || {
+                    let result = m.mine_block(block);
+                    let _ = tx_worker.blocking_send(result);
+                });
+            }
 
-            match result {
-                MiningResult::Success(block) => {
-                    let mut state = miner_state.lock().unwrap();
-                    let hash = block.hash();
-                    let height = state.height + 1;
-                    
-                    // Apply block
-                    state.apply_block(&block);
-                    
-                    println!("⛏️  Mined block {} ({})", height, hash);
-                    
-                    // Small delay to simulate network latency / block time management
-                    // In real PoW, we just mine instantly again, but here lets be gentle to logs
+            // Clean up: drop the original sender so rx closes when all workers finish
+            drop(tx);
+
+            // Wait for a result
+            let mut found_block = None;
+            while let Some(result) = rx.recv().await {
+                if let MiningResult::Success(block) = result {
+                    found_block = Some(block);
+                    // Stop all other workers immediately
+                    miner_instance.stop();
+                    break;
                 }
-                _ => {
-                    // Interrupted or failed or no work
-                    sleep(Duration::from_millis(100)).await;
-                }
+            }
+
+            if let Some(block) = found_block {
+                let mut state = miner_state.lock().unwrap();
+                let hash = block.hash();
+                let height = state.height + 1;
+                
+                state.apply_block(&block);
+                println!("⛏️  Mined block {} ({})", height, hash);
+            } else {
+                // All workers stopped without success (interrupted)
+                sleep(Duration::from_millis(100)).await;
             }
         }
     });
@@ -114,11 +131,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::select! {
         _ = async {
             loop {
-                // Just accept connections and log them
                 match listener.accept().await {
                     Ok((_socket, addr)) => {
                         println!("Peer connected: {}", addr);
-                        // Connection dropped here
                     }
                     Err(e) => {
                         eprintln!("Connection error: {}", e);

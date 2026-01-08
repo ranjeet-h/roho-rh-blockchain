@@ -1,33 +1,24 @@
-ROHO (RH) v1.1 - Official Launch (FIXED)
-========================================
+ROHO (RH) v1.2 - Official Launch (MULTI-CORE)
+===========================================
 
 RELEASE HASHES
 --------------
-Tag: roho-v1.1-fixed
-Binary: 53c6319009266463149ca78c42eca44eaccb5cfa0f1daba9cbf3210912617e0d
+Tag: roho-v1.2-multi
+Binary: 519685f9af2ddb92838e9182b6a6d77e972788f3474c42c0d9db03ac835ff27e
 Genesis: 3153db7f3b03eb371f2227bdb8464626f41399de839dd739c77b6c71bc85d623
 Constitution: c38b2b1333db0280b786f5ea750911b7a5dbf12df6e3e6e7e468b9e7b39e62bf
 
+NEW IN v1.2
+-----------
+- **Parallel Mining**: Automatic detection of CPU cores.
+- **Improved Performance**: Utilizes all available processor cores for PoW.
+- **Async Orchestration**: Managed via high-performance tokio tasks.
+
 INSTRUCTIONS
 ------------
-
 1. CONFIRM INTEGRITY
-   Wait for independent verification of the binary hash.
-   Run `shasum -a 256 rh-node` to verify your copy.
-
-2. SHADOW NETWORK (Phase 5)
-   Run `./rh-node` on 2-3 private machines.
-   The node will listen on port 8333.
-   It will mine CPU blocks in the background (visible in logs).
-
-3. MAINNET (Phase 6)
-   The binary provided IS the mainnet binary.
-   Mining on this binary creates the RH history.
-
-WARNING
--------
-This software is provided "as is", without warranty of any kind.
-The protocol is immutable.
-There is no "update" button.
+   Run `shasum -a 256 rh-node` to verify.
+2. SHADOW NETWORK
+   Run `./rh-node` and verify "Parallel Mining: ON" in logs.
 
 -- ROHO Developers

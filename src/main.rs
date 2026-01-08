@@ -113,11 +113,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if let Some(block) = found_block {
                 let mut state = miner_state.lock().unwrap();
-                let hash = block.hash();
-                let height = state.height + 1;
-                
                 state.apply_block(&block);
-                println!("⛏️  Mined block {} ({})", height, hash);
+                let stats = state.get_stats();
+                
+                println!("⛏️  Block #{} | Tip: {}... | Coins: {} RH", 
+                    stats.height, 
+                    &stats.tip_hash.to_string()[..12],
+                    stats.total_issued / 100_000_000
+                );
             } else {
                 // All workers stopped without success (interrupted)
                 sleep(Duration::from_millis(100)).await;

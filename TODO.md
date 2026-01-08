@@ -6,7 +6,7 @@ This guide details the exact steps to execute Phase 5 (Shadow Network) and Phase
 
 - Terminal/Command Prompt
 - `cargo` (Rust) installed
-- Two distinct computers (or two separate terminal windows on one machine)
+- **One or more computers** (Instruction below covers single and multi-machine setups)
 
 ---
 
@@ -54,34 +54,9 @@ certutil -hashfile target\release\rh-node.exe SHA256
 
 **Expected**: `53c6319009266463149ca78c42eca44eaccb5cfa0f1daba9cbf3210912617e0d`
 
-### Step 3: Start Node A (The First Miner)
+### Step 3: Start your node (Single Machine)
 
-Run this in Terminal 1 (or Machine A).
-
-**macOS / Linux**:
-
-```bash
-./target/release/rh-node
-```
-
-**Windows (PowerShell)**:
-
-```powershell
-.\target\release\rh-node.exe
-```
-
-**Look for logs**:
-
-- `Genesis Block Information: ...`
-- `Node started on port 8333`
-- `Mining in background (CPU)...`
-- `⛏️  Mined block 1 (...)`
-
-Let this run. It acts as the seed of your network.
-
-### Step 4: Start Node B (The Second Miner)
-
-Run this in Terminal 2 (or Machine B).
+If you only have one machine, follow these steps to verify it mines blocks.
 
 **macOS / Linux**:
 
@@ -94,6 +69,21 @@ Run this in Terminal 2 (or Machine B).
 ```powershell
 .\target\release\rh-node.exe
 ```
+
+**What to verify**:
+
+- Look for `⛏️  Mined block X` logs every few minutes.
+- If it mines Block 1, 2, 3... your node is healthy!
+
+---
+
+### Step 4: Multi-Machine Network (Optional but Recommended)
+
+To test the "Network" part (Node A talking to Node B), you need two machines.
+
+1.  Start Node A as shown above.
+2.  Start Node B on another machine.
+3.  Verify they both mine independently.
 
 _Note: If running on the SAME machine, you might get a "Address already in use" error for port 8333. For a true shadow network, use separate machines or separate folders/configs if supported._
 

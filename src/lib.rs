@@ -13,6 +13,8 @@ pub mod p2p;
 pub mod mining;
 pub mod wallet;
 pub mod node;
+pub mod rpc;
+pub mod explorer;
 
 /// Protocol constants - HARD-CODED, NEVER CONFIGURABLE
 pub mod constants {
@@ -49,4 +51,41 @@ pub mod constants {
     /// Constitution hash (SHA256 of RH_CONSTITUTION.txt)
     /// FROZEN: This value is immutable after genesis
     pub const CONSTITUTION_HASH: &str = "c38b2b1333db0280b786f5ea750911b7a5dbf12df6e3e6e7e468b9e7b39e62bf";
+    
+    /// Seed nodes for network bootstrap
+    /// New nodes will connect to these to discover peers
+    /// Format: "host:port"
+    pub const SEED_NODES: &[&str] = &[
+        // Primary seed node (maintained by core team)
+        "seed.roho.io:8333",
+        
+        // Backup seed nodes
+        "seed2.roho.io:8333",
+        "seed3.roho.io:8333",
+        
+        // Community nodes (to be updated as network grows)
+        // Add more seed nodes here as they are proven stable
+    ];
+    
+    /// Chain checkpoints - hard blocks that cannot be reorged past
+    /// Format: (height, block_hash_hex)
+    /// These checkpoints prevent deep chain reorganizations and speed up initial sync
+    /// Should be updated every 100k blocks or at major milestones
+    pub const CHECKPOINTS: &[(u64, &str)] = &[
+        // Genesis block
+        (0, "3153db7f3b03eb371f2227bdb8464626f41399de839dd739c77b6c71bc85d623"),
+
+        // Add checkpoints here as the chain progresses
+        // Example:
+        // (100_000, "block_hash_at_height_100k"),
+        // (200_000, "block_hash_at_height_200k"),
+    ];
+    
+    /// Maximum depth of chain reorganization allowed (in blocks)
+    /// Prevents reorgs deeper than this unless explicitly authorized
+    pub const MAX_REORG_DEPTH: u64 = 10;
+    
+    /// Chain ID for replay protection
+    /// Mainnet = 0x01, Testnet = 0x00
+    pub const CHAIN_ID: u8 = 0x01;
 }

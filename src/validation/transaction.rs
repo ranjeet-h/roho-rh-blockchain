@@ -39,6 +39,9 @@ pub struct Transaction {
     pub outputs: Vec<TxOutput>,
     /// Lock time (block height or timestamp)
     pub lock_time: u32,
+    /// Transaction nonce (per-sender sequence number for ordering)
+    /// Allows users to replace pending transactions with higher fee
+    pub nonce: u64,
 }
 
 impl Transaction {
@@ -49,6 +52,18 @@ impl Transaction {
             inputs,
             outputs,
             lock_time: 0,
+            nonce: 0,
+        }
+    }
+
+    /// Create a new transaction with explicit nonce
+    pub fn new_with_nonce(inputs: Vec<TxInput>, outputs: Vec<TxOutput>, nonce: u64) -> Self {
+        Self {
+            version: 1,
+            inputs,
+            outputs,
+            lock_time: 0,
+            nonce,
         }
     }
 
@@ -67,6 +82,7 @@ impl Transaction {
                 pubkey_hash: miner_pubkey_hash,
             }],
             lock_time: 0,
+            nonce: 0,
         }
     }
 
@@ -96,6 +112,9 @@ impl Transaction {
         // Version
         bytes.extend_from_slice(&self.version.to_le_bytes());
         
+        // Nonce
+        bytes.extend_from_slice(&self.nonce.to_le_bytes());
+        
         // Input count
         bytes.extend_from_slice(&(self.inputs.len() as u32).to_le_bytes());
         
@@ -121,9 +140,9 @@ impl Transaction {
     }
 
     /// Verify all input signatures
-    pub fn verify_signatures(&self, utxo_set: &UTXOSet) -> bool {
+    pub fn verify_signatures(&self, utxo_set: &UTXOSet) -> Result<(), String> {
         if self.is_coinbase() {
-            return true;
+            return Ok(());
         }
 
         let signing_hash = self.signing_hash();
@@ -131,21 +150,25 @@ impl Transaction {
         for input in &self.inputs {
             // Verify signature
             if !input.public_key.verify(&signing_hash, &input.signature) {
-                return false;
+                return Err(format!("Invalid signature for input {}:{}", input.prev_tx_hash, input.output_index));
             }
 
             // Verify public key matches the UTXO
             if let Some(utxo) = utxo_set.get(&input.prev_tx_hash, input.output_index) {
-                let pubkey_hash = hash_bytes(&input.public_key.0);
-                if pubkey_hash != utxo.pubkey_hash {
-                    return false;
+                // Derive the 20-byte address-format hash from the signer's public key
+                let full_hash = hash_bytes(&input.public_key.0);
+                let mut pubkey_hash = [0u8; 32];
+                pubkey_hash[0..20].copy_from_slice(&full_hash.0[0..20]);
+                
+                if pubkey_hash != utxo.pubkey_hash.0 {
+                    return Err(format!("Public key mismatch for UTXO {}:{}", input.prev_tx_hash, input.output_index));
                 }
             } else {
-                return false;
+                return Err(format!("UTXO not found: {}:{}", input.prev_tx_hash, input.output_index));
             }
         }
 
-        true
+        Ok(())
     }
 
     /// Calculate total input value (requires UTXO lookup)
@@ -216,6 +239,7 @@ mod tests {
             }],
             outputs: vec![TxOutput { amount: 100, pubkey_hash: Hash::zero() }],
             lock_time: 0,
+            nonce: 0,
         };
 
         let tx2 = Transaction {
@@ -228,6 +252,7 @@ mod tests {
             }],
             outputs: vec![TxOutput { amount: 100, pubkey_hash: Hash::zero() }],
             lock_time: 0,
+            nonce: 0,
         };
 
         // Signing hash should be the same

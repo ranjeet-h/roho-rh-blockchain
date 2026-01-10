@@ -37,6 +37,8 @@ pub struct PeerInfo {
     pub version: u32,
     /// Misbehavior score (100 = ban)
     pub misbehavior_score: u32,
+    /// Channel to send messages to this peer
+    pub sender: Option<tokio::sync::mpsc::Sender<crate::p2p::Message>>,
 }
 
 impl PeerInfo {
@@ -50,6 +52,7 @@ impl PeerInfo {
             best_height: 0,
             version: 0,
             misbehavior_score: 0,
+            sender: None,
         }
     }
 
@@ -113,14 +116,36 @@ impl PeerManager {
     }
 
     /// Mark peer as connected
-    pub fn peer_connected(&mut self, addr: SocketAddr, version: u32, best_height: u64) {
+    pub fn peer_connected(&mut self, addr: SocketAddr, version: u32, best_height: u64, sender: tokio::sync::mpsc::Sender<crate::p2p::Message>) {
         if let Some(peer) = self.peers.get_mut(&addr) {
             peer.state = PeerState::Connected;
             peer.version = version;
             peer.best_height = best_height;
             peer.failed_attempts = 0;
+            peer.sender = Some(sender);
             peer.touch();
             self.connected.insert(addr);
+        }
+    }
+
+    /// Broadcast a message to all connected peers
+    pub fn broadcast_message(&self, msg: &crate::p2p::Message) {
+        for addr in &self.connected {
+            if let Some(peer) = self.peers.get(addr) {
+                if let Some(sender) = &peer.sender {
+                    let _ = sender.try_send(msg.clone());
+                }
+            }
+        }
+    }
+
+    /// Update peer's best known height
+    pub fn update_peer_height(&mut self, addr: &SocketAddr, height: u64) {
+        if let Some(peer) = self.peers.get_mut(addr) {
+            if height > peer.best_height {
+                peer.best_height = height;
+                peer.touch();
+            }
         }
     }
 
@@ -239,7 +264,8 @@ mod tests {
         let addr = make_addr(8000);
         
         pm.add_peer(addr);
-        pm.peer_connected(addr, 1, 100);
+        let (tx, _) = tokio::sync::mpsc::channel(1);
+        pm.peer_connected(addr, 1, 100, tx);
         
         assert_eq!(pm.connected_count(), 1);
         
@@ -254,7 +280,8 @@ mod tests {
         let addr = make_addr(8000);
         
         pm.add_peer(addr);
-        pm.peer_connected(addr, 1, 100);
+        let (tx, _) = tokio::sync::mpsc::channel(1);
+        pm.peer_connected(addr, 1, 100, tx);
         pm.ban_peer(&addr);
         
         assert_eq!(pm.connected_count(), 0);
@@ -267,7 +294,8 @@ mod tests {
         let addr = make_addr(8000);
         
         pm.add_peer(addr);
-        pm.peer_connected(addr, 1, 100);
+        let (tx, _) = tokio::sync::mpsc::channel(1);
+        pm.peer_connected(addr, 1, 100, tx);
         
         pm.report_misbehavior(&addr, 50);
         assert_eq!(pm.connected_count(), 1);

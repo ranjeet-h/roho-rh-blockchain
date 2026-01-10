@@ -7,7 +7,11 @@ use crate::crypto::{Hash, PrivateKey, PublicKey, hash_bytes};
 use crate::storage::{UTXOSet, UTXO, UTXOKey};
 use crate::validation::{Transaction, TxInput, TxOutput};
 use thiserror::Error;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::Path;
 
 /// Wallet errors
 #[derive(Debug, Error)]
@@ -23,7 +27,7 @@ pub enum WalletError {
 }
 
 /// A wallet key pair
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyPair {
     /// Private key (for signing)
     private_key: PrivateKey,
@@ -67,8 +71,13 @@ impl KeyPair {
     }
 
     /// Get the public key hash (used in outputs)
+    /// Returns the first 20 bytes of the BLAKE3 hash, padded to 32 bytes.
+    /// This matches the address encoding format.
     pub fn pubkey_hash(&self) -> Hash {
-        hash_bytes(&self.public_key.0)
+        let full_hash = hash_bytes(&self.public_key.0);
+        let mut addr_hash = [0u8; 32];
+        addr_hash[0..20].copy_from_slice(&full_hash.0[0..20]);
+        Hash(addr_hash)
     }
 
     /// Sign a message
@@ -79,7 +88,7 @@ impl KeyPair {
 }
 
 /// A simple wallet
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Wallet {
     /// Wallet keys (pubkey_hash -> keypair)
     keys: HashMap<Hash, KeyPair>,
@@ -113,6 +122,12 @@ impl Wallet {
         let pubkey_hash = keypair.pubkey_hash();
         self.keys.insert(pubkey_hash, keypair);
         Ok(self.keys.get(&pubkey_hash).unwrap())
+    }
+
+    /// Get a keypair by address
+    pub fn get_key_for_address(&self, address: &str) -> Option<&KeyPair> {
+        let pubkey_hash = crate::wallet::address_to_pubkey_hash(address).ok()?;
+        self.keys.get(&pubkey_hash)
     }
 
     /// Get all addresses
@@ -228,6 +243,24 @@ impl Wallet {
         }
 
         Ok(tx)
+    }
+
+    /// Save wallet to file
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        let bytes = bincode::serialize(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let mut file = File::create(path)?;
+        file.write_all(&bytes)
+    }
+
+    /// Load wallet from file
+    pub fn load<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+        let mut file = File::open(path)?;
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes)?;
+        let wallet = bincode::deserialize(&bytes)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        Ok(wallet)
     }
 }
 

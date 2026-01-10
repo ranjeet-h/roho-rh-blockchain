@@ -62,6 +62,7 @@ proptest! {
     ) {
         let header1 = BlockHeader::new(
             version,
+            0x01,
             Hash::zero(),
             Hash::zero(),
             timestamp,
@@ -70,6 +71,7 @@ proptest! {
         );
         let header2 = BlockHeader::new(
             version,
+            0x01,
             Hash::zero(),
             Hash::zero(),
             timestamp,
@@ -87,9 +89,8 @@ proptest! {
     ) {
         let nonce2 = nonce1.wrapping_add(1);
         
-        let header1 = BlockHeader::new(1, Hash::zero(), Hash::zero(), 0, 0x1d00ffff, nonce1);
-        let header2 = BlockHeader::new(1, Hash::zero(), Hash::zero(), 0, 0x1d00ffff, nonce2);
-        
+        let header1 = BlockHeader::new(1, 0x01, Hash::zero(), Hash::zero(), 0, 0x1d00ffff, nonce1);
+        let header2 = BlockHeader::new(1, 0x01, Hash::zero(), Hash::zero(), 0, 0x1d00ffff, nonce2);      
         prop_assert_ne!(header1.hash(), header2.hash());
     }
 }

@@ -2,6 +2,7 @@
 
 mod utxo;
 mod state;
+pub mod db;
 
 pub use utxo::*;
 pub use state::*;

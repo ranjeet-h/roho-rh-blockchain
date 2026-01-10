@@ -5,12 +5,13 @@
 use std::collections::HashMap;
 use crate::crypto::Hash;
 use crate::validation::Transaction;
+use serde::{Serialize, Deserialize};
 
 /// Key for UTXO lookup: (tx_hash, output_index)
 pub type UTXOKey = (Hash, u32);
 
 /// Unspent Transaction Output
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UTXO {
     /// Amount in base units
     pub amount: u64,
@@ -101,10 +102,14 @@ impl UTXOSet {
     }
 
     /// Get all UTXOs for a given public key hash
+    /// Note: Addresses encode only first 20 bytes, so we compare those
     pub fn get_by_pubkey_hash(&self, pubkey_hash: &Hash) -> Vec<(UTXOKey, &UTXO)> {
         self.utxos
             .iter()
-            .filter(|(_, utxo)| utxo.pubkey_hash == *pubkey_hash)
+            .filter(|(_, utxo)| {
+                // Compare first 20 bytes (address-encoded portion)
+                utxo.pubkey_hash.0[0..20] == pubkey_hash.0[0..20]
+            })
             .map(|(key, utxo)| (*key, utxo))
             .collect()
     }

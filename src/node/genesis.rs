@@ -35,6 +35,7 @@ pub fn create_genesis_block() -> Block {
             pubkey_hash: founder_pubkey_hash,
         }],
         lock_time: 0,
+        nonce: 0,
     };
 
     // Embed constitution hash in a second (empty value) output
@@ -54,6 +55,7 @@ pub fn create_genesis_block() -> Block {
             pubkey_hash: constitution_hash,
         }],
         lock_time: 0,
+        nonce: 0,
     };
 
     let transactions = vec![founder_tx, constitution_tx];
@@ -67,6 +69,7 @@ pub fn create_genesis_block() -> Block {
     // Create genesis header
     let header = BlockHeader::new(
         GENESIS_VERSION,
+        crate::constants::CHAIN_ID, // chain_id for replay protection
         Hash::zero(), // No previous block
         merkle_root,
         GENESIS_TIMESTAMP,

@@ -7,7 +7,7 @@ use crate::crypto::{Hash, compute_merkle_root};
 use crate::validation::Transaction;
 use crate::storage::ChainState;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Mining result
@@ -24,15 +24,15 @@ pub enum MiningResult {
 /// Block miner
 #[derive(Clone)]
 pub struct Miner {
-    /// Miner's public key hash (for coinbase)
-    miner_pubkey_hash: Hash,
+    /// Miner's public key hash (for coinbase) - shared to allow dynamic updates
+    miner_pubkey_hash: Arc<Mutex<Hash>>,
     /// Stop signal
     stop_signal: Arc<AtomicBool>,
 }
 
 impl Miner {
     /// Create a new miner
-    pub fn new(miner_pubkey_hash: Hash) -> Self {
+    pub fn new(miner_pubkey_hash: Arc<Mutex<Hash>>) -> Self {
         Self {
             miner_pubkey_hash,
             stop_signal: Arc::new(AtomicBool::new(false)),
@@ -61,10 +61,17 @@ impl Miner {
         transactions: Vec<Transaction>,
     ) -> Block {
         let height = chain_state.height + 1;
-        let reward = calculate_block_reward(height, chain_state.total_issued);
+        let subsidy = calculate_block_reward(height, chain_state.total_issued);
+        
+        // Calculate transaction fees
+        let mut total_fees = 0u64;
+        for tx in &transactions {
+            total_fees = total_fees.saturating_add(tx.fee(&chain_state.utxo_set));
+        }
 
-        // Create coinbase transaction
-        let coinbase = Transaction::coinbase(reward, self.miner_pubkey_hash);
+        // Create coinbase transaction (subsidy + fees)
+        let miner_pkh = *self.miner_pubkey_hash.lock().unwrap();
+        let coinbase = Transaction::coinbase(subsidy.saturating_add(total_fees), miner_pkh);
 
         // Combine coinbase with other transactions
         let mut all_txs = vec![coinbase];
@@ -83,6 +90,7 @@ impl Miner {
         // Create header
         let header = BlockHeader::new(
             1, // version
+            crate::constants::CHAIN_ID, // chain_id for replay protection
             chain_state.tip_hash,
             merkle_root,
             timestamp,
@@ -236,8 +244,31 @@ mod tests {
     }
 
     #[test]
+    fn test_miner_assemble_block() {
+        let miner_pkh = hash_bytes(b"miner");
+        let miner = Miner::new(Arc::new(Mutex::new(miner_pkh)));
+
+        // Create a dummy genesis block to initialize state
+        let genesis = Block::new(
+            BlockHeader::new(1, 0x01, Hash::zero(), Hash::zero(), 0, 0x1d00ffff, 0),
+            vec![]
+        );
+        let chain_state = ChainState::new(&genesis);
+        let transactions = vec![];
+
+        let block = miner.assemble_block(&chain_state, transactions);
+
+        assert_eq!(block.header.version, 1);
+        assert_eq!(block.header.prev_hash, chain_state.tip_hash);
+        assert_eq!(block.header.difficulty_target, chain_state.difficulty);
+        assert_eq!(block.header.nonce, 0);
+        assert_eq!(block.transactions.len(), 1); // Only coinbase
+        assert!(block.transactions[0].is_coinbase());
+    }
+
+    #[test]
     fn test_miner_stop_signal() {
-        let miner = Miner::new(Hash::zero());
+        let miner = Miner::new(Arc::new(Mutex::new(Hash::zero()))); // Updated here
         let signal = miner.stop_signal();
 
         assert!(!signal.load(Ordering::SeqCst));

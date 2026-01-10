@@ -24,8 +24,8 @@ pub enum SignatureError {
 }
 
 /// 32-byte private key
-#[derive(Clone)]
-pub struct PrivateKey(SigningKey);
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PrivateKey(#[serde(with = "privkey_serde")] pub SigningKey);
 
 impl std::fmt::Debug for PrivateKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -89,6 +89,32 @@ mod sig_serde {
     }
 }
 
+mod privkey_serde {
+    use serde::{Deserialize, Deserializer, Serializer};
+    use k256::schnorr::SigningKey;
+
+    pub fn serialize<S>(key: &SigningKey, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(&key.to_bytes())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<SigningKey, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes: Vec<u8> = Deserialize::deserialize(deserializer)?;
+        if bytes.len() != 32 {
+            return Err(serde::de::Error::custom("Invalid private key length"));
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        SigningKey::from_bytes(arr.as_slice().into())
+            .map_err(|_| serde::de::Error::custom("Invalid private key bytes"))
+    }
+}
+
 impl PrivateKey {
     /// Generate a new random private key
     pub fn generate() -> Self {
@@ -98,22 +124,22 @@ impl PrivateKey {
 
     /// Create from 32 bytes
     pub fn from_bytes(bytes: &[u8; 32]) -> Result<Self, SignatureError> {
-        SigningKey::from_bytes(bytes)
-            .map(PrivateKey)
-            .map_err(|_| SignatureError::InvalidPrivateKey)
+        let secret_key = k256::SecretKey::from_slice(bytes)
+            .map_err(|_| SignatureError::InvalidPrivateKey)?;
+        Ok(PrivateKey(SigningKey::from(&secret_key)))
     }
 
     /// Get the corresponding public key
     pub fn public_key(&self) -> PublicKey {
         let verifying_key = self.0.verifying_key();
-        let bytes = verifying_key.to_bytes();
-        PublicKey(bytes.into())
+        let bytes: [u8; 32] = verifying_key.to_bytes().into();
+        PublicKey(bytes)
     }
 
     /// Sign a message hash
     pub fn sign(&self, message: &Hash) -> Result<SchnorrSignature, SignatureError> {
         let signature: Signature = self.0.sign(&message.0);
-        Ok(SchnorrSignature(signature.to_bytes()))
+        Ok(SchnorrSignature(signature.to_bytes().into()))
     }
 
     /// Export to bytes

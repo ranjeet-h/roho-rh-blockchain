@@ -11,6 +11,9 @@ use crate::validation::Transaction;
 pub struct BlockHeader {
     /// Protocol version
     pub version: u32,
+    /// Chain ID (replay protection) - identifies which chain this block belongs to
+    /// RH Mainnet = 0x01, Testnet = 0x00
+    pub chain_id: u8,
     /// Hash of the previous block
     pub prev_hash: Hash,
     /// Merkle root of all transactions
@@ -27,6 +30,7 @@ impl BlockHeader {
     /// Create a new block header
     pub fn new(
         version: u32,
+        chain_id: u8,
         prev_hash: Hash,
         merkle_root: Hash,
         timestamp: u64,
@@ -35,6 +39,7 @@ impl BlockHeader {
     ) -> Self {
         Self {
             version,
+            chain_id,
             prev_hash,
             merkle_root,
             timestamp,
@@ -44,9 +49,11 @@ impl BlockHeader {
     }
 
     /// Serialize the header for hashing
+    /// Includes chain_id for replay protection
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.version.to_le_bytes());
+        bytes.push(self.chain_id);
         bytes.extend_from_slice(&self.prev_hash.0);
         bytes.extend_from_slice(&self.merkle_root.0);
         bytes.extend_from_slice(&self.timestamp.to_le_bytes());
@@ -100,6 +107,7 @@ mod tests {
     fn test_block_header_serialization() {
         let header = BlockHeader::new(
             1,
+            0x01,
             Hash::zero(),
             Hash::zero(),
             1234567890,
@@ -107,13 +115,14 @@ mod tests {
             0,
         );
         let bytes = header.to_bytes();
-        assert_eq!(bytes.len(), 4 + 32 + 32 + 8 + 4 + 8); // 88 bytes
+        assert_eq!(bytes.len(), 4 + 1 + 32 + 32 + 8 + 4 + 8); // 89 bytes (added 1 for chain_id)
     }
 
     #[test]
     fn test_genesis_block_detection() {
         let header = BlockHeader::new(
             1,
+            0x01,
             Hash::zero(),
             Hash::zero(),
             1234567890,

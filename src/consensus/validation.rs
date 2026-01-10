@@ -125,10 +125,8 @@ fn validate_transactions(
         }
         
         // Validate transaction signature
-        if !tx.verify_signatures(utxo_set) {
-            return Err(ValidationError::InvalidTransaction(
-                "Invalid signature".to_string()
-            ));
+        if let Err(e) = tx.verify_signatures(utxo_set) {
+            return Err(ValidationError::InvalidTransaction(e));
         }
     }
     
@@ -339,6 +337,7 @@ mod tests {
         // Very easy target (all 0xFF)
         let header = BlockHeader::new(
             1,
+            0x01,
             Hash::zero(),
             Hash::zero(),
             1234567890,
@@ -354,7 +353,7 @@ mod tests {
         let tx = Transaction::coinbase(5000, hash_bytes(b"miner"));
         let merkle_root = crate::crypto::compute_merkle_root(&[tx.hash()]);
         
-        let header = BlockHeader::new(1, Hash::zero(), merkle_root, 0, 0x1d00ffff, 0);
+        let header = BlockHeader::new(1, 0x01, Hash::zero(), merkle_root, 0, 0x1d00ffff, 0);
         let block = Block::new(header, vec![tx]);
         
         assert!(validate_merkle_root(&block).is_ok());
@@ -365,7 +364,7 @@ mod tests {
         let tx = Transaction::coinbase(5000, hash_bytes(b"miner"));
         let wrong_root = hash_bytes(b"wrong");
         
-        let header = BlockHeader::new(1, Hash::zero(), wrong_root, 0, 0x1d00ffff, 0);
+        let header = BlockHeader::new(1, 0x01, Hash::zero(), wrong_root, 0, 0x1d00ffff, 0);
         let block = Block::new(header, vec![tx]);
         
         assert!(validate_merkle_root(&block).is_err());

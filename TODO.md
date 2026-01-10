@@ -52,7 +52,7 @@ shasum -a 256 target/release/rh-node
 certutil -hashfile target\release\rh-node.exe SHA256
 ```
 
-**Expected**: `35dc9cdb80ff1c5764d652e4cc97ae99277e1ded27d046fd6e182fff36ccb288`  
+**Expected**: `512426f6ac794c7dd0bef6d0e306ed40416df9c7af96e2568bf19a34f5e906c1`  
 _(Note: This exact hash is for macOS Apple Silicon. Windows and Linux binaries will have different hashes, which is normal. The important thing is that the **Genesis Hash** in the node output matches on all machines.)_
 
 ### Step 3: Start your node (Single Machine)

@@ -8,7 +8,7 @@ Generated: 2026-01-08T19:06:11+05:30
 | --------------------- | ---------------------------------------------------------------- |
 | Rust Compiler         | rustc 1.92.0 (ded5c06cf 2025-12-08)                              |
 | Cargo.lock SHA256     | c637eb355dc7997e99602654b44201a13e378a3041dc592ebc6356238f989a3f |
-| rh-node Binary SHA256 | 35dc9cdb80ff1c5764d652e4cc97ae99277e1ded27d046fd6e182fff36ccb288 |
+| rh-node Binary SHA256 | 512426f6ac794c7dd0bef6d0e306ed40416df9c7af96e2568bf19a34f5e906c1 |
 
 ## Git Repository
 
